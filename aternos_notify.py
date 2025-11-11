@@ -1,9 +1,9 @@
 from mcstatus import JavaServer
 import discord
 import asyncio
-
+import os
 # ===== CONFIGURATION =====
-TOKEN = "MTQzNzU1OTA2MDMxMTMxNDU3NA.G3-hkE.4FeFRwX3xZoeEY15yGPKT4y-yp_sCdwQvsOmsM"
+TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1437560932942217306  # Your Discord channel ID
 SERVER_ADDRESS = "TourtonneGarden.aternos.me"  # Aternos server
 CHECK_INTERVAL = 180
