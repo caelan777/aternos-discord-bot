@@ -1,17 +1,16 @@
 import os
 import discord
 import asyncio
-from mcstatus import JavaServer
+from mcstatus import MinecraftServer
 from flask import Flask
 from threading import Thread
 
 # -----------------------------
 # Discord Bot Setup
 # -----------------------------
-TOKEN = os.environ['DISCORD_TOKEN']  # Make sure this env variable is set in Render
-CHANNEL_ID = int(os.environ.get("DISCORD_CHANNEL", 0))  # Discord channel for updates
-SERVER_IP = os.environ.get("MC_SERVER_IP", "play.example.com")  # Minecraft server IP
-CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", 60))  # Seconds between server checks
+TOKEN = os.environ['DISCORD_TOKEN']          # Discord bot token
+CHANNEL_ID = int(os.environ['DISCORD_CHANNEL'])  # Discord channel ID to send updates
+SERVER_IP = os.environ['MC_SERVER_IP']       # Minecraft server IP (with optional port)
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -20,42 +19,37 @@ client = discord.Client(intents=intents)
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user}')
-    # Start background server status task
-    client.loop.create_task(monitor_server())
 
 @client.event
 async def on_message(message):
+    print(f"Message received: {message.content} from {message.author}")
     if message.author == client.user:
         return
     if message.content.lower() == "!ping":
         await message.channel.send("Pong!")
 
 # -----------------------------
-# Server Monitoring Logic
+# Minecraft Status Loop
 # -----------------------------
-async def monitor_server():
+async def server_status_loop():
     await client.wait_until_ready()
     channel = client.get_channel(CHANNEL_ID)
-    if channel is None:
-        print(f"Channel ID {CHANNEL_ID} not found!")
-        return
-
-    last_status = None
+    last_online = None
     while not client.is_closed():
         try:
-            server = JavaServer(SERVER_IP)
+            server = MinecraftServer.lookup(SERVER_IP)
             status = server.status()
-            msg = f"Server online! {status.players.online}/{status.players.max} players."
-            if last_status != msg:
-                await channel.send(msg)
-                last_status = msg
-        except Exception as e:
-            msg = f"Server offline or unreachable."
-            if last_status != msg:
-                await channel.send(msg)
-                last_status = msg
+            online = status.players.online
+            if online != last_online:
+                await channel.send(f"Players online: {online}")
+                last_online = online
+        except Exception:
+            if last_online is not None:
+                await channel.send("Server is offline!")
+                last_online = None
+        await asyncio.sleep(30)  # Check every 30 seconds
 
-        await asyncio.sleep(CHECK_INTERVAL)
+client.loop.create_task(server_status_loop())
 
 # -----------------------------
 # Flask Web Server (for Render)
@@ -70,9 +64,6 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# -----------------------------
-# Start Flask server in a separate thread
-# -----------------------------
 Thread(target=run_flask).start()
 
 # -----------------------------
