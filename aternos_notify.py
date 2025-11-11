@@ -18,10 +18,12 @@ async def on_ready():
 # Example: simple message response
 @client.event
 async def on_message(message):
+    print(f"Message received: {message.content} from {message.author}")
     if message.author == client.user:
         return
     if message.content.lower() == "!ping":
         await message.channel.send("Pong!")
+
 
 # -----------------------------
 # Flask Web Server (for Render)
