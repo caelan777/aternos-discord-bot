@@ -3,7 +3,7 @@ import discord
 import asyncio
 import os
 # ===== CONFIGURATION =====
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = os.environ['DISCORD_TOKEN']
 CHANNEL_ID = 1437560932942217306  # Your Discord channel ID
 SERVER_ADDRESS = "TourtonneGarden.aternos.me"  # Aternos server
 CHECK_INTERVAL = 180
