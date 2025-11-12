@@ -4,6 +4,8 @@ from mcstatus import JavaServer
 from flask import Flask
 from threading import Thread
 import asyncio
+import time
+import requests
 
 # -----------------------------
 # Discord Bot Setup
@@ -63,11 +65,22 @@ def run_flask():
     app.run(host="0.0.0.0", port=port)
 
 # -----------------------------
-# Start Flask server in a separate thread
+# Self-ping to keep Render awake
 # -----------------------------
-Thread(target=run_flask).start()
+def self_ping():
+    url = "https://aternos-discord-bot-dh09.onrender.com/healthz"
+    while True:
+        try:
+            requests.get(url)
+            print("Pinged self to stay awake")
+        except Exception:
+            print("Ping failed (ignored)")
+        time.sleep(600)  # every 10 minutes
 
 # -----------------------------
-# Start Discord Bot
+# Start Flask + Self-Ping + Discord Bot
 # -----------------------------
+Thread(target=run_flask).start()
+Thread(target=self_ping, daemon=True).start()
+
 client.run(TOKEN)
